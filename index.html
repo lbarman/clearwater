@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en" data-ng-app="TaskApp">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="./img/clearwater.png">
+    <title>Clearwater | Task Management</title>
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/custom.css" rel="stylesheet">
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body data-ng-controller="TaskCtrl">
+    <nav class="navbar navbar-inverse navbar-fixed-top">
+      <div class="container"  data-ng-click="selected.select(-1)">
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">{{constants.title}}</a>
+        </div>
+        <div class="navbar-form navbar-right">
+          <button id="saveAll" type="submit" class="btn btn-info" data-ng-click="ajax.saveAll()">Save</button>
+          <button id="loadAll" type="submit" class="btn btn-info" data-ng-click="ajax.loadAll()">Load</button>
+        </div>
+        <ul class="nav nav-pills nav navbar-nav navbar-right">
+          <li role="presentation" class="active"><a href="#" data-ng-click="filters.select('all')" class="tag_menu tag_default {{filters.getActiveForTag('all')}}">All</a></li>
+          <li role="presentation" data-ng-repeat="tag in user.tags"><a href="#" data-ng-click="filters.select(tag)" class="tag_menu {{text.getClassesForTags(tag)}} {{filters.getActiveForTag(tag)}}">{{tag}}</a></li>
+        </ul>
+      </div>
+    </nav>
+    <div class="spacer"></div>
+    <div class="container">
+      <!-- Example row of columns -->
+      <div class="row">
+        <div data-ng-repeat="(column_id, column) in user.columns" class="column col-md-2 {{(columns.isTrash(column_id) ? 'trash' : '')}}">
+          <div class="innercol panel panel-default">
+            <h2>{{column}}</h2>
+            <div class="thumbnail dropZone" data-drop="true" data-jqyoui-droppable="{onDrop:'drag.noteDropped(column_id, -1)'}"></div>
+            <div data-ng-repeat="note in notes.getNotes(column_id) track by note.id">
+              <div id="note{{note.id}}" data-dynamic="noteToHtml(note)" data-drag="true" data-jqyoui-options="{revert: 'invalid'}" data-jqyoui-draggable="{animate:true, onStart: 'drag.noteDragged(note.id, note.order)', onStop: 'drag.stopped(note.id, note.order)'}"></div>
+              <div class="thumbnail dropZone" data-drop="true" data-jqyoui-droppable="{onDrop:'drag.noteDropped(column_id, note.order+1)'}"></div>
+            </div>
+            <div class="add">
+              <button type="submit" data-ng-click="notes.create(column_id)" class="btn btn-info">Add new</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Modal -->
+      <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <form>
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-body" data-ng-if="modal.modalMode=='edit'">
+                <div class="input-group" id="tags_line" data-dynamic="notes.currentEditTags()"></div>
+                <div class="input-group">
+                  <span class="input-group-addon" id="basic-addon1">Note {{currentEdit}}</span>
+                  <input id="editTextBox" type="text" class="form-control" placeholder="Content..." aria-describedby="basic-addon1" data-ng-model="user.notes[notes.currentEdit].text">
+                </div>
+              </div>
+              <div class="modal-body" data-ng-if="modal.modalMode=='password'">
+                <div class="input-group">
+                  <span class="input-group-addon" id="basic-addon2">Password :</span>
+                  <input id="passwordTextBox" type="password" class="form-control" placeholder="Content..." aria-describedby="basic-addon1" data-ng-model="user.password">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <input type="submit" class="btn btn-primary" data-ng-enter="" data-ng-click="modalClosed()" data-dismiss="modal" value="Save" />
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <!-- /container -->
+      <div id="logoDrop"><span class="glyphicon glyphicon-plus-sign" aria-hidden="true"></span></div>
+    </div>
+    <!-- Bootstrap core JavaScript
+      ================================================== -->
+    <!-- Crypto JS -->
+    <script src="js/core-min.js"></script>
+    <script src="js/enc-utf16-min.js"></script>
+    <script src="js/enc-base64-min.js"></script>
+    <script src="js/sha1.js"></script>
+    <script src="js/aes.js"></script>
+    <!-- Jquery & bootstrap -->
+    <script src="js/jquery-2.1.1.js"></script>
+    <script src="js/jquery-ui.js"></script>
+    <script src="js/jquery.base64.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <!-- Angular -->
+    <script src="js/angular.js"></script>
+    <script src="js/ui-bootstrap.js"></script>
+    <script src="js/angular-animate.js"></script>
+    <script src="js/angular-dragdrop.js"></script>
+    <script src="js/angular-cookies.min.js"></script>
+    <script src="js/angular-route.js"></script>
+    <!-- App -->
+    <script src="js/timestamp.js"></script>
+    <script src="js/app.js"></script>
+    <script src="controllers/TaskCtrl.js"></script>
+    <script type="text/javascript">
+      $(function() {
+        follow = false;
+
+        $(document).on('mousemove', function(e){
+          if(follow)
+          {
+            $('#logoDrop').css({
+               left:  e.pageX,
+               top:   e.pageY
+            });
+          }
+        });
+
+        $("body").css('background-image', "url('img/bg/Elegant_Background-"+Math.floor((Math.random() * 6) + 1)+".jpg')");
+      });
+    </script>
+  </body>
+</html>
